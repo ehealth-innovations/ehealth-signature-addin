@@ -1,0 +1,10 @@
+{
+  "_comment": "Fill in host, clientId and tenantId, then run `npm run build`. Bump version whenever manifest.template.xml changes.",
+  "host": "https://signature.ehealthinnovations.nl",
+  "clientId": "13bf7867-79ec-426f-a7f9-47c770d0cadd",
+  "tenantId": "a6ddc692-b8b9-41f8-86ef-a7e02843c3d3",
+  "addinId": "7f3c2a61-5b4e-4d8a-9c1e-2e6b0d4a9f57",
+  "version": "1.0.0.0",
+  "cacheHours": 24,
+  "replyVariant": "full"
+}

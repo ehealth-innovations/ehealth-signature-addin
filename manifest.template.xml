@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated into dist/manifest.xml by `npm run build`. {{HOST}}, {{ADDIN_ID}} and {{VERSION}} come from config.json. -->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides"
+  xsi:type="MailApp">
+  <Id>{{ADDIN_ID}}</Id>
+  <Version>{{VERSION}}</Version>
+  <ProviderName>Ehealth Innovations</ProviderName>
+  <DefaultLocale>nl-NL</DefaultLocale>
+  <DisplayName DefaultValue="Ehealth Innovations handtekening"/>
+  <Description DefaultValue="Voegt automatisch de centrale Ehealth Innovations e-mailhandtekening toe."/>
+  <IconUrl DefaultValue="{{HOST}}/assets/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="{{HOST}}/assets/icon-128.png"/>
+  <SupportUrl DefaultValue="https://www.ehealthinnovations.nl"/>
+  <AppDomains>
+    <AppDomain>{{HOST}}</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.1"/>
+    </Sets>
+  </Requirements>
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="{{HOST}}/commands.html"/>
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+  <Permissions>ReadWriteItem</Permissions>
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  </Rule>
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
+      <Description resid="AppDesc"/>
+      <!-- 1.5 keeps the add-in available on iOS/Android; newer APIs are feature-detected in code. -->
+      <Requirements>
+        <bt:Sets DefaultMinVersion="1.5">
+          <bt:Set Name="Mailbox"/>
+        </bt:Sets>
+      </Requirements>
+      <Hosts>
+        <Host xsi:type="MailHost">
+          <!-- HTML runtime for web, new Outlook, Mac and mobile; JS override for classic Outlook for Windows. -->
+          <Runtimes>
+            <Runtime resid="WebViewRuntime.Url">
+              <Override type="javascript" resid="JSRuntime.Url"/>
+            </Runtime>
+          </Runtimes>
+
+          <DesktopFormFactor>
+            <FunctionFile resid="Commands.Url"/>
+
+            <!-- Ribbon button in compose: re-insert the signature if someone deleted it. -->
+            <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="ehiSigGroup">
+                  <Label resid="GroupLabel"/>
+                  <Control xsi:type="Button" id="ehiSigInsertButton">
+                    <Label resid="InsertButton.Label"/>
+                    <Supertip>
+                      <Title resid="InsertButton.Label"/>
+                      <Description resid="InsertButton.Tooltip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Icon.16x16"/>
+                      <bt:Image size="32" resid="Icon.32x32"/>
+                      <bt:Image size="80" resid="Icon.80x80"/>
+                    </Icon>
+                    <Action xsi:type="ExecuteFunction">
+                      <FunctionName>insertSignatureButton</FunctionName>
+                    </Action>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+
+            <ExtensionPoint xsi:type="LaunchEvent">
+              <LaunchEvents>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
+                <LaunchEvent Type="OnMessageFromChanged" FunctionName="onMessageFromChangedHandler"/>
+              </LaunchEvents>
+              <SourceLocation resid="WebViewRuntime.Url"/>
+            </ExtensionPoint>
+          </DesktopFormFactor>
+
+          <MobileFormFactor>
+            <ExtensionPoint xsi:type="LaunchEvent">
+              <LaunchEvents>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
+                <LaunchEvent Type="OnMessageFromChanged" FunctionName="onMessageFromChangedHandler"/>
+              </LaunchEvents>
+              <SourceLocation resid="WebViewRuntime.Url"/>
+            </ExtensionPoint>
+          </MobileFormFactor>
+        </Host>
+      </Hosts>
+
+      <Resources>
+        <bt:Images>
+          <bt:Image id="Icon.16x16" DefaultValue="{{HOST}}/assets/icon-16.png"/>
+          <bt:Image id="Icon.32x32" DefaultValue="{{HOST}}/assets/icon-32.png"/>
+          <bt:Image id="Icon.80x80" DefaultValue="{{HOST}}/assets/icon-80.png"/>
+        </bt:Images>
+        <bt:Urls>
+          <bt:Url id="Commands.Url" DefaultValue="{{HOST}}/commands.html"/>
+          <bt:Url id="WebViewRuntime.Url" DefaultValue="{{HOST}}/commands.html"/>
+          <bt:Url id="JSRuntime.Url" DefaultValue="{{HOST}}/launchevent.js"/>
+        </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="GroupLabel" DefaultValue="Ehealth Innovations"/>
+          <bt:String id="InsertButton.Label" DefaultValue="Handtekening invoegen"/>
+        </bt:ShortStrings>
+        <bt:LongStrings>
+          <bt:String id="AppDesc" DefaultValue="Voegt automatisch de centrale Ehealth Innovations e-mailhandtekening toe."/>
+          <bt:String id="InsertButton.Tooltip" DefaultValue="Voegt de Ehealth Innovations handtekening opnieuw toe aan dit bericht."/>
+        </bt:LongStrings>
+      </Resources>
+    </VersionOverrides>
+  </VersionOverrides>
+</OfficeApp>

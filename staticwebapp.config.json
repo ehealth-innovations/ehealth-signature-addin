@@ -1,0 +1,16 @@
+{
+  "routes": [
+    { "route": "/launchevent.js", "headers": { "Cache-Control": "no-cache" } },
+    { "route": "/commands.html", "headers": { "Cache-Control": "no-cache" } },
+    { "route": "/manifest.xml", "headers": { "Cache-Control": "no-cache" } },
+    { "route": "/.well-known/microsoft-officeaddins-allowed.json", "headers": { "Content-Type": "application/json", "Cache-Control": "no-cache" } },
+    { "route": "/assets/*", "headers": { "Cache-Control": "public, max-age=86400" } }
+  ],
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff"
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".xml": "text/xml"
+  }
+}
