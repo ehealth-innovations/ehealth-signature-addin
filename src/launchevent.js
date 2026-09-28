@@ -12,12 +12,14 @@
  *   → setSignatureAsync → event.completed()
  */
 
-/* global Office, fetch, console, __CONFIG__ */
+/* global Office, fetch, console, __CONFIG__, __ASSETS__ */
 
 import { createNestablePublicClientApplication } from "@azure/msal-browser";
 import { buildSignature } from "./template";
 
 const CONFIG = __CONFIG__; // injected at build time from config.json
+const ASSETS = __ASSETS__; // { logo, band } base64 PNGs, injected at build time from assets/
+const SESSION_KEY = "ehi_sig_attachments";
 const CACHE_KEY = "ehi_sig_profile_v1";
 const GRAPH_URL =
   "https://graph.microsoft.com/v1.0/me?$select=displayName,jobTitle,department,businessPhones,mobilePhone,mail";
@@ -177,6 +179,75 @@ async function getProfile() {
   return fallbackProfile();
 }
 
+/* ---------- Embedded (inline) images ---------- */
+
+/** config.inlineImages: "all", "none", or a list of mailbox addresses (for testing). */
+function inlineImagesEnabled() {
+  const v = CONFIG.inlineImages;
+  if (v === "all") return true;
+  if (Array.isArray(v)) {
+    const me = String((Office.context.mailbox.userProfile || {}).emailAddress || "").toLowerCase();
+    return v.some((x) => String(x).toLowerCase() === me);
+  }
+  return false;
+}
+
+function sessionGet(item) {
+  if (!item.sessionData || typeof item.sessionData.getAsync !== "function") return Promise.resolve(null);
+  return officeCall((cb) => item.sessionData.getAsync(SESSION_KEY, cb)).catch(() => null);
+}
+
+function sessionSet(item, value) {
+  if (!item.sessionData || typeof item.sessionData.setAsync !== "function") return Promise.resolve();
+  return officeCall((cb) => item.sessionData.setAsync(SESSION_KEY, value, cb)).catch(() => {});
+}
+
+function removeAttachment(item, id) {
+  if (typeof item.removeAttachmentAsync !== "function") return Promise.resolve();
+  return officeCall((cb) => item.removeAttachmentAsync(id, cb)).catch(() => {});
+}
+
+/** Removes the images this add-in attached earlier to the same message (From change / button). */
+async function removePreviousImages(item) {
+  const raw = await sessionGet(item);
+  if (!raw) return;
+  let ids = [];
+  try {
+    ids = JSON.parse(raw) || [];
+  } catch (e) {
+    ids = [];
+  }
+  for (const id of ids) await removeAttachment(item, id);
+  await sessionSet(item, "[]");
+}
+
+/**
+ * Attaches logo + band as inline images and returns their cid: sources.
+ * Unique names per message, so they never clash with images in quoted replies.
+ * Returns null (→ hosted images) when the client can't attach inline images.
+ */
+async function attachInlineImages(item) {
+  if (!inlineImagesEnabled() || typeof item.addFileAttachmentFromBase64Async !== "function") return null;
+  await removePreviousImages(item);
+  const tag = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const names = { logo: "ehi-logo-" + tag + ".png", band: "ehi-band-" + tag + ".png" };
+  const ids = [];
+  try {
+    for (const key of ["logo", "band"]) {
+      const id = await officeCall((cb) =>
+        item.addFileAttachmentFromBase64Async(ASSETS[key], names[key], { isInline: true }, cb)
+      );
+      ids.push(id);
+    }
+  } catch (e) {
+    log("Inline image failed, using hosted images: " + (e && e.message));
+    for (const id of ids) await removeAttachment(item, id);
+    return null;
+  }
+  await sessionSet(item, JSON.stringify(ids));
+  return { logo: "cid:" + names.logo, band: "cid:" + names.band };
+}
+
 /* ---------- Main ---------- */
 
 async function applySignature(event) {
@@ -198,9 +269,9 @@ async function applySignature(event) {
 
     const isReply = composeType === "reply" || composeType === "forward";
     const variant = isReply ? CONFIG.replyVariant || "full" : "full";
-    const html = buildSignature(person, CONFIG.host, variant);
-
     await disableClientSignature(item);
+    const images = variant === "compact" ? null : await attachInlineImages(item);
+    const html = buildSignature(person, CONFIG.host, variant, images);
     await setSignature(item, html);
   } catch (e) {
     log("Signature not set: " + (e && e.message));
