@@ -19,6 +19,13 @@ const runtimeConfig = {
   tenantId: cfg.tenantId,
   cacheHours: cfg.cacheHours,
   replyVariant: cfg.replyVariant,
+  inlineImages: cfg.inlineImages || "none",
+};
+
+// Logo and band as base64, so the add-in can embed them in the mail (no "download images" prompt).
+const assetsB64 = {
+  logo: readFileSync("assets/logo.png").toString("base64"),
+  band: readFileSync("assets/band.png").toString("base64"),
 };
 
 await build({
@@ -28,7 +35,7 @@ await build({
   format: "iife",
   // Classic Outlook's JS-only runtime is conservative: lower syntax (incl. async/await).
   target: ["es2016"],
-  define: { __CONFIG__: JSON.stringify(runtimeConfig) },
+  define: { __CONFIG__: JSON.stringify(runtimeConfig), __ASSETS__: JSON.stringify(assetsB64) },
   outfile: "dist/launchevent.js",
   legalComments: "none",
 });
