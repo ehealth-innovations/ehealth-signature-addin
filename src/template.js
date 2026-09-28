@@ -123,5 +123,12 @@ export function buildSignature(person, assetBase, variant) {
     email: clean(person.email),
   };
   const a = String(assetBase).replace(/\/+$/, "");
-  return variant === "compact" ? compactSignature(p, a) : fullSignature(p, a);
+  const body = variant === "compact" ? compactSignature(p, a) : fullSignature(p, a);
+  return closing() + body;
+}
+
+/** "Met vriendelijke groet," followed by one empty line, in the same font as the signature. */
+function closing() {
+  const style = `margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:18px;mso-line-height-rule:exactly;color:${INK};`;
+  return `<p style="${style}">Met vriendelijke groet,</p><p style="${style}">&nbsp;</p>`;
 }
