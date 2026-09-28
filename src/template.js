@@ -3,10 +3,11 @@
  * Table-based HTML with inline styles only (no classes), web-safe fonts.
  * Column grid: 100 | 22 | 1 | 22 | 230 = 375 px (same as the original design).
  *
- * buildSignature(person, assetBase, variant)
+ * buildSignature(person, assetBase, variant, images)
  *   person:   { name, title, phone, email }  – empty fields are left out entirely
  *   assetBase: absolute https URL of the hosted add-in, without trailing slash
  *   variant:  "full" (logo + details) or "compact" (text only, for replies)
+ *   images:   optional { logo, band } image sources (e.g. "cid:…" for embedded images)
  */
 
 const INK = "#2B1A27";
@@ -40,11 +41,9 @@ export function telHref(phone) {
 const TD_TEXT =
   "padding:0;margin:0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:18px;mso-line-height-rule:exactly;";
 
-function spacerRow(assetBase, height, colspan, width) {
-  return (
-    `<tr><td colspan="${colspan}" height="${height}" style="height:${height}px;padding:0;margin:0;font-size:1px;line-height:1px;">` +
-    `<img src="${assetBase}/assets/spacer.gif" width="${width}" height="${height}" alt="" style="display:block;width:${width}px;height:${height}px;border:0;"></td></tr>`
-  );
+function spacerRow(height, colspan) {
+  // Pure table spacing – no spacer image, so nothing has to be downloaded.
+  return `<tr><td colspan="${colspan}" height="${height}" style="height:${height}px;padding:0;margin:0;font-size:1px;line-height:${height}px;mso-line-height-rule:exactly;">&nbsp;</td></tr>`;
 }
 
 function labelRow(label, valueHtml) {
@@ -56,7 +55,7 @@ function labelRow(label, valueHtml) {
   );
 }
 
-function detailRows(p, assetBase) {
+function detailRows(p) {
   const rows = [];
   rows.push(
     `<tr><td colspan="2" height="20" align="left" valign="top" style="padding:0;margin:0;height:20px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:20px;mso-line-height-rule:exactly;color:${PLUM};font-weight:bold;">${esc(p.name)}</td></tr>`
@@ -66,7 +65,7 @@ function detailRows(p, assetBase) {
       `<tr><td colspan="2" height="18" align="left" valign="top" style="height:18px;${TD_TEXT}color:${SLATE};font-weight:normal;">${esc(p.title)}</td></tr>`
     );
   }
-  if (p.phone || p.email) rows.push(spacerRow(assetBase, 14, 2, 1));
+  if (p.phone || p.email) rows.push(spacerRow(14, 2));
   if (p.phone) {
     const href = telHref(p.phone);
     const text = esc(p.phone);
@@ -82,40 +81,40 @@ function detailRows(p, assetBase) {
       )
     );
   }
-  rows.push(spacerRow(assetBase, 12, 2, 1));
+  rows.push(spacerRow(12, 2));
   rows.push(
     `<tr><td colspan="2" height="18" align="left" valign="top" style="height:18px;${TD_TEXT}"><a href="${LINKEDIN}" style="color:${MAGENTA};text-decoration:underline;">Volg ons op LinkedIn</a></td></tr>`
   );
   return rows.join("");
 }
 
-function fullSignature(p, a) {
+function fullSignature(p, img) {
   return (
     `<table cellpadding="0" cellspacing="0" border="0" width="375" style="width:375px;border:0;border-collapse:collapse;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:18px;color:${INK};">` +
     `<tr>` +
-    `<td width="100" valign="middle" style="width:100px;padding:0;margin:0;font-size:1px;line-height:1px;"><img src="${a}/assets/logo.png" width="100" height="145" alt="Ehealth Innovations" style="display:block;width:100px;height:145px;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;"></td>` +
+    `<td width="100" valign="middle" style="width:100px;padding:0;margin:0;font-size:1px;line-height:1px;"><img src="${img.logo}" width="100" height="145" alt="Ehealth Innovations" style="display:block;width:100px;height:145px;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;"></td>` +
     `<td width="22" style="width:22px;padding:0;margin:0;font-size:1px;line-height:1px;">&nbsp;</td>` +
-    `<td width="1" bgcolor="${MIST}" style="width:1px;padding:0;margin:0;font-size:1px;line-height:1px;background-color:${MIST};"><img src="${a}/assets/spacer.gif" width="1" height="145" alt="" style="display:block;width:1px;height:145px;border:0;"></td>` +
+    `<td width="1" bgcolor="${MIST}" style="width:1px;padding:0;margin:0;font-size:1px;line-height:1px;background-color:${MIST};">&nbsp;</td>` +
     `<td width="22" style="width:22px;padding:0;margin:0;font-size:1px;line-height:1px;">&nbsp;</td>` +
     `<td width="230" valign="middle" style="width:230px;padding:0;margin:0;">` +
     `<table cellpadding="0" cellspacing="0" border="0" width="230" style="width:230px;border:0;border-collapse:collapse;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;">` +
-    detailRows(p, a) +
+    detailRows(p) +
     `</table></td></tr>` +
-    spacerRow(a, 16, 5, 375) +
-    `<tr><td colspan="5" height="4" style="height:4px;padding:0;margin:0;font-size:1px;line-height:1px;"><img src="${a}/assets/band.png" width="375" height="4" alt="" style="display:block;width:375px;height:4px;border:0;"></td></tr>` +
+    spacerRow(16, 5) +
+    `<tr><td colspan="5" height="4" style="height:4px;padding:0;margin:0;font-size:1px;line-height:1px;"><img src="${img.band}" width="375" height="4" alt="" style="display:block;width:375px;height:4px;border:0;"></td></tr>` +
     `</table>`
   );
 }
 
-function compactSignature(p, a) {
+function compactSignature(p) {
   return (
     `<table cellpadding="0" cellspacing="0" border="0" width="230" style="width:230px;border:0;border-collapse:collapse;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:18px;color:${INK};">` +
-    detailRows(p, a) +
+    detailRows(p) +
     `</table>`
   );
 }
 
-export function buildSignature(person, assetBase, variant) {
+export function buildSignature(person, assetBase, variant, images) {
   const p = {
     name: clean(person.name) || clean(person.email),
     title: clean(person.title),
@@ -123,7 +122,12 @@ export function buildSignature(person, assetBase, variant) {
     email: clean(person.email),
   };
   const a = String(assetBase).replace(/\/+$/, "");
-  const body = variant === "compact" ? compactSignature(p, a) : fullSignature(p, a);
+  // images: { logo, band } – e.g. "cid:..." for embedded images; defaults to the hosted files.
+  const img = {
+    logo: (images && images.logo) || a + "/assets/logo.png",
+    band: (images && images.band) || a + "/assets/band.png",
+  };
+  const body = variant === "compact" ? compactSignature(p) : fullSignature(p, img);
   return closing() + body;
 }
 
